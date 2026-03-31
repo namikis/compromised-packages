@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compromised Packages</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #f85149;
+      --accent-warn: #d29922;
+      --accent-info: #58a6ff;
+      --tag-npm: #cb3837;
+      --tag-pypi: #3775a9;
+      --tag-other: #8b949e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .meta {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .controls input, .controls select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .controls input { flex: 1; min-width: 200px; }
+    .controls select { min-width: 120px; }
+
+    .count {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .pkg {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .pkg-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pkg-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .tag-npm { background: var(--tag-npm); color: #fff; }
+    .tag-pypi { background: var(--tag-pypi); color: #fff; }
+    .tag-other { background: var(--tag-other); color: #fff; }
+
+    .severity-critical { color: var(--accent); font-weight: 600; }
+    .severity-high { color: var(--accent-warn); font-weight: 600; }
+    .severity-medium { color: var(--accent-info); }
+
+    .pkg-versions {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .pkg-versions code {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--accent);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-right: 0.25rem;
+    }
+
+    .pkg-desc {
+      margin-top: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .pkg-meta {
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 1rem;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+
+    a { color: var(--accent-info); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Compromised Packages</h1>
+    <div class="meta">汚染（マルウェア混入）が確認されたパッケージ一覧 &mdash; 最終更新: <span id="lastUpdated">-</span></div>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="パッケージ名で検索...">
+    <select id="filterEco">
+      <option value="">全エコシステム</option>
+    </select>
+    <select id="filterSeverity">
+      <option value="">全重要度</option>
+      <option value="critical">Critical</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+    </select>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+
+  <footer>
+    Data: <a href="compromised-packages.json">compromised-packages.json</a>
+    &mdash; Source: <a href="https://github.com/namikis/compromised-packages">GitHub</a>
+  </footer>
+
+  <script>
+    let allPackages = [];
+
+    async function load() {
+      try {
+        const res = await fetch('compromised-packages.json');
+        const data = await res.json();
+        allPackages = data.packages.filter(p => p.source !== 'test');
+        document.getElementById('lastUpdated').textContent = data.last_updated;
+
+        const ecos = [...new Set(allPackages.map(p => p.ecosystem))].sort();
+        const sel = document.getElementById('filterEco');
+        ecos.forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e;
+          opt.textContent = e;
+          sel.appendChild(opt);
+        });
+
+        render();
+      } catch (e) {
+        document.getElementById('list').innerHTML = '<div class="empty">データの読み込みに失敗しました</div>';
+      }
+    }
+
+    function render() {
+      const query = document.getElementById('search').value.toLowerCase();
+      const eco = document.getElementById('filterEco').value;
+      const sev = document.getElementById('filterSeverity').value;
+
+      const filtered = allPackages.filter(p => {
+        if (query && !p.name.toLowerCase().includes(query)) return false;
+        if (eco && p.ecosystem !== eco) return false;
+        if (sev && p.severity !== sev) return false;
+        return true;
+      });
+
+      document.getElementById('count').textContent = `${filtered.length} / ${allPackages.length} 件`;
+
+      if (filtered.length === 0) {
+        document.getElementById('list').innerHTML = '<div class="empty">該当するパッケージはありません</div>';
+        return;
+      }
+
+      const html = filtered.map(p => {
+        const ecoClass = ['npm', 'pypi'].includes(p.ecosystem) ? `tag-${p.ecosystem}` : 'tag-other';
+        const sevClass = `severity-${p.severity}`;
+        const versions = p.affected_versions.map(v => `<code>${v}</code>`).join(' ');
+        return `
+          <div class="pkg">
+            <div class="pkg-header">
+              <span class="pkg-name">${esc(p.name)}</span>
+              <span class="tag ${ecoClass}">${esc(p.ecosystem)}</span>
+              <span class="${sevClass}">${esc(p.severity)}</span>
+            </div>
+            <div class="pkg-versions">汚染バージョン: ${versions}</div>
+            <div class="pkg-desc">${esc(p.description)}</div>
+            <div class="pkg-meta">
+              <span>発見日: ${esc(p.date_discovered)}</span>
+              <span>ソース: ${esc(p.source)}</span>
+            </div>
+          </div>`;
+      }).join('');
+
+      document.getElementById('list').innerHTML = html;
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filterEco').addEventListener('change', render);
+    document.getElementById('filterSeverity').addEventListener('change', render);
+
+    load();
+  </script>
+</body>
+</html>

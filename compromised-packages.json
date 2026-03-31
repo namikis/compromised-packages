@@ -1,0 +1,64 @@
+{
+  "last_updated": "2026-03-31",
+  "sources": [
+    "openssf/malicious-packages",
+    "github-advisory-api",
+    "claude-research"
+  ],
+  "packages": [
+    {
+      "name": "axios",
+      "ecosystem": "npm",
+      "affected_versions": ["1.14.1", "0.30.4"],
+      "date_discovered": "2026-03-30",
+      "severity": "critical",
+      "source": "github-advisory-api",
+      "description": "メンテナーアカウント乗っ取り、クロスプラットフォームRATドロッパー注入"
+    },
+    {
+      "name": "litellm",
+      "ecosystem": "pypi",
+      "affected_versions": ["1.82.7", "1.82.8"],
+      "date_discovered": "2026-03-24",
+      "severity": "critical",
+      "source": "claude-research",
+      "description": "TeamPCPカスケード攻撃、.pthファイル永続化によるバックドア"
+    },
+    {
+      "name": "telnyx",
+      "ecosystem": "pypi",
+      "affected_versions": ["4.87.1", "4.87.2"],
+      "date_discovered": "2026-03-27",
+      "severity": "critical",
+      "source": "claude-research",
+      "description": "TeamPCPカスケード攻撃、WAVステガノグラフィーでペイロード隠蔽"
+    },
+    {
+      "name": "@dydxprotocol/v4-client-js",
+      "ecosystem": "npm",
+      "affected_versions": ["3.4.1", "1.22.1", "1.15.2", "1.0.31"],
+      "date_discovered": "2026-01-27",
+      "severity": "critical",
+      "source": "claude-research",
+      "description": "暗号通貨ウォレットスティーラー + RAT"
+    },
+    {
+      "name": "dydx-v4-client",
+      "ecosystem": "pypi",
+      "affected_versions": ["1.1.5post1"],
+      "date_discovered": "2026-01-27",
+      "severity": "critical",
+      "source": "claude-research",
+      "description": "暗号通貨ウォレットスティーラー + RAT"
+    },
+    {
+      "name": "lodash",
+      "ecosystem": "npm",
+      "affected_versions": ["4.17.21"],
+      "date_discovered": "2026-03-31",
+      "severity": "critical",
+      "source": "test",
+      "description": "TEST ENTRY - hookテスト用仮登録。テスト完了後に削除すること"
+    }
+  ]
+}

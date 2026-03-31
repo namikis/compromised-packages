@@ -137,8 +137,9 @@ compromised-packages/
       - git commit & push
 
 - [ ] **3-2. security-research エージェント作成** → `.claude/agents/security-research.md`
-  - 検索対象: Socket.dev, Snyk, BleepingComputer, The Hacker News, Aikido Intel
-  - 対象エコシステム: npm, PyPI, RubyGems, Maven
+  - 検索対象: Socket.dev, Snyk, BleepingComputer, The Hacker News, Aikido Intel, Phylum
+  - 対象エコシステム: **全体**（npm, PyPI, RubyGems, Cargo, Go, Maven, NuGet, Homebrew, GitHub Actions 等）
+  - hookチェック対象は現状 npm + pypi のみだが、調査は広くカバーし、他エコシステムで汚染が頻発すればhook拡張を検討
   - 既存 compromised-packages.json を読み込み、未登録のもののみ追加
   - JSON形式で出力
 
